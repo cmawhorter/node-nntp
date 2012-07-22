@@ -91,6 +91,7 @@ NNTP.prototype.connect = function(port, host) {
         // new response
         code = parseInt(curData.substring(idxStart, 3), 10);
         text = curData.substring(3, idxCRLF).trim();
+        console.log(self._queue);
         if (isML = (respsML.indexOf(code) > -1
                     || (code === 211 && self._queue[0][0] === 'LISTGROUP')))
           self._MLEmitter = new EventEmitter();
@@ -285,6 +286,7 @@ NNTP.prototype.groups = function(search, skipEmpty, cb) {
           msgCount = (first - second) + 1;
       if (first === 10000000000000000 || second === 10000000000000000)
         msgCount += 1;
+      console.log('\t>> First/Last: ', first, second);
       if (!skipEmpty || msgCount > 0)
         emitter.emit('group', name, msgCount, status);
     });
@@ -513,7 +515,98 @@ NNTP.prototype.article = function(who, cb) {
 
 /* Extended features */
 
-// TODO
+NNTP.prototype.article = function(who, cb) {
+  if (!this._state || (!this._curGroup && typeof who === 'function'))
+    return false;
+  if (typeof who === 'function') {
+    cb = who;
+    who = undefined;
+  }
+  var self = this;
+  this._setBinMode(true);
+  return this.send('ARTICLE', who, function(e, mle, msgid) {
+    if (e)
+      return cb(e);
+    var emitter = new EventEmitter(), prevField, prevVal, inHeaders = true;
+    mle.on('line', function(line) {
+      if (inHeaders) {
+        line = ''+line;
+        if (/^[\t ]/.test(line))
+          prevVal += line;
+        else if (line.length) {
+          if (prevField)
+            emitter.emit('header', prevField, prevVal);
+          var idxSep = line.indexOf(": ");
+          prevField = line.substring(0, idxSep);
+          prevVal = line.substring(idxSep+2);
+        } else {
+          emitter.emit('header', prevField, prevVal);
+          inHeaders = false;
+        }
+      } else
+        emitter.emit('line', line);
+    });
+    mle.on('end', function() {
+      emitter.emit('end');
+    });
+    cb(undefined, emitter, msgid);
+  });
+};
+
+NNTP.prototype.help = function(cb) {
+  if (!this._state)
+    return false;
+  return this.send('HELP', function(e, mle) {
+    if (e)
+      return cb(e);
+
+    var cmds = [];
+    mle.on('line', function(line) {
+      cmds.push(line.trim().split(' ', 2));
+    });
+    mle.on('end', function() {
+      cb(undefined, cmds);
+    });
+  });
+};
+
+NNTP.prototype.list = function(search, skipEmpty, cb) {
+  if (!this._state)
+    return false;
+  if (typeof search === 'function') {
+    cb = search;
+    search = '';
+    skipEmpty = true;
+  } else if (typeof skipEmpty === 'function') {
+    cb = skipEmpty;
+    skipEmpty = true;
+  }
+  if (Array.isArray(search))
+    search = search.join(',');
+  search = (search ? ' ' + search : '');
+  var self = this;
+  return this.send('LIST', 'ACTIVE' + search, function(e, mle) {
+    if (e)
+      return cb(e);
+    var emitter = new EventEmitter();
+    mle.on('line', function(line) {
+      line = line.split(' ');
+      var name = line[0],
+          first = parseInt(line[1], 10),
+          second = parseInt(line[2], 10),
+          status = line[3],
+          msgCount = (first - second) + 1;
+      if (first === 10000000000000000 || second === 10000000000000000)
+        msgCount += 1;
+      if (!skipEmpty || msgCount > 0)
+        emitter.emit('group', name, second, first, msgCount, status);
+    });
+    mle.on('end', function() {
+      emitter.emit('end');
+    });
+    cb(undefined, emitter);
+  });
+};
 
 
 /* Internal helper methods */
