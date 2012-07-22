@@ -91,6 +91,7 @@ NNTP.prototype.connect = function(port, host) {
         // new response
         code = parseInt(curData.substring(idxStart, 3), 10);
         text = curData.substring(3, idxCRLF).trim();
+        console.log(code, self._queue);
         if (isML = (respsML.indexOf(code) > -1
                     || (code === 211 && self._queue[0][0] === 'LISTGROUP')))
           self._MLEmitter = new EventEmitter();
@@ -285,7 +286,6 @@ NNTP.prototype.groups = function(search, skipEmpty, cb) {
           msgCount = (first - second) + 1;
       if (first === 10000000000000000 || second === 10000000000000000)
         msgCount += 1;
-      console.log('\t>> First/Last: ', first, second);
       if (!skipEmpty || msgCount > 0)
         emitter.emit('group', name, msgCount, status);
     });
