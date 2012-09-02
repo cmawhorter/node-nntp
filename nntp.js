@@ -5,7 +5,8 @@
 
 var util = require('util'),
     net = require('net'),
-    Iconv = require('iconv'),
+    // Iconv = require('iconv').Iconv,
+    // iconv = new Iconv('ISO-8859-1', 'UTF-8'),
     EventEmitter = require('events').EventEmitter,
     Buffy = require('./deps/buffy'),
     respsML = [100, 101, 215, 220, 221, 222, 224, 225, 230, 231],
@@ -75,10 +76,6 @@ NNTP.prototype.connect = function(port, host) {
   var code = undefined, text, hasProcessed = false, isML = false, idxCRLF,
       idxStart = 0, idxBStart = 0, idxBCRLF;
   socket.on('data', function(data) {
-    var iconv = new Iconv('ISO-8859-1', 'UTF-8');
-
-    data = ic.convert(data);//.toString('utf8');
-
     if (self._buffer)
       self._buffy.append(data);
     curData += data;
@@ -98,7 +95,7 @@ NNTP.prototype.connect = function(port, host) {
         text = curData.substring(3, idxCRLF).trim();
         console.log(code, self._queue);
         if (isML = (respsML.indexOf(code) > -1
-                    || (code === 211 && self._queue[0][0] === 'LISTGROUP')))
+                    || (code === 211 && self._queue[0] === 'LISTGROUP')))
           self._MLEmitter = new EventEmitter();
         if (debug) {
           debug('Response: code = ' + code + ' (multiline: ' + isML + ')'
