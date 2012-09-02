@@ -93,7 +93,6 @@ NNTP.prototype.connect = function(port, host) {
         // new response
         code = parseInt(curData.substring(idxStart, 3), 10);
         text = curData.substring(3, idxCRLF).trim();
-        console.log(code, self._queue);
         if (isML = (respsML.indexOf(code) > -1
                     || (code === 211 && self._curReq[0] === 'LISTGROUP')))
           self._MLEmitter = new EventEmitter();
