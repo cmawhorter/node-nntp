@@ -5,8 +5,8 @@
 
 var util = require('util'),
     net = require('net'),
-    // Iconv = require('iconv').Iconv,
-    // iconv = new Iconv('ISO-8859-1', 'UTF-8'),
+    Iconv = require('iconv').Iconv,
+    iconv = new Iconv('ISO-8859-1', 'UTF-8'),
     EventEmitter = require('events').EventEmitter,
     Buffy = require('./deps/buffy'),
     respsML = [100, 101, 215, 220, 221, 222, 224, 225, 230, 231],
@@ -78,7 +78,7 @@ NNTP.prototype.connect = function(port, host) {
   socket.on('data', function(data) {
     if (self._buffer)
       self._buffy.append(data);
-    curData += data;
+    curData += iconv.convert(data).toString('utf8');
     while ((idxCRLF = curData.indexOf('\r\n', idxStart)) > -1
            || (self._buffer &&
                (idxBCRLF = self._buffy.indexOf(bytesCRLF, idxBStart)) > -1)) {
