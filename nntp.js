@@ -74,6 +74,10 @@ NNTP.prototype.connect = function(port, host) {
   var code = undefined, text, hasProcessed = false, isML = false, idxCRLF,
       idxStart = 0, idxBStart = 0, idxBCRLF;
   socket.on('data', function(data) {
+    var iconv = new Iconv('ISO-8859-1', 'UTF-8');
+
+    data = ic.convert(data);//.toString('utf8');
+
     if (self._buffer)
       self._buffy.append(data);
     curData += data;
@@ -598,7 +602,11 @@ NNTP.prototype.list = function(search, skipEmpty, cb) {
       if (first === 10000000000000000 || second === 10000000000000000)
         msgCount += 1;
       if (!skipEmpty || msgCount > 0)
-        emitter.emit('group', name, second, first, msgCount, status);
+      {
+        var first_post = second
+          , last_post = first;
+        emitter.emit('group', name, first_post, last_post, msgCount, status);
+      }
     });
     mle.on('end', function() {
       emitter.emit('end');
@@ -606,7 +614,6 @@ NNTP.prototype.list = function(search, skipEmpty, cb) {
     cb(undefined, emitter);
   });
 };
-
 
 /* Internal helper methods */
 
