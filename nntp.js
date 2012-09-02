@@ -5,6 +5,7 @@
 
 var util = require('util'),
     net = require('net'),
+    Iconv = require('iconv'),
     EventEmitter = require('events').EventEmitter,
     Buffy = require('./deps/buffy'),
     respsML = [100, 101, 215, 220, 221, 222, 224, 225, 230, 231],
