@@ -9,5 +9,5 @@
   "repository" : { "type": "git", "url": "http://github.com/mscdex/node-nntp.git" },
   "dependencies": {
     "iconv": "0.1.0",
-  },
+  }
 }
